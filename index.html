@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lidmašīna — pults</title>
+<meta name="theme-color" content="#0f1419">
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --text: #16191d; --muted: #5d6670; --line: #dde1e6;
+    --accent: #1f6feb; --accent-text: #ffffff; --ok: #1a7f37; --bad: #cf222e; --warn: #9a6700;
+    --next: #fff4d6; --next-line: #d4a72c; --btn: #eef1f4; --btn-hover: #e3e7eb; --seg: #dde1e6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1419; --card: #171d24; --text: #e6e9ec; --muted: #8b949e; --line: #2a323c;
+      --accent: #3b82f6; --ok: #3fb950; --bad: #f85149; --warn: #d29922;
+      --next: #2d2410; --next-line: #d29922; --btn: #222a33; --btn-hover: #2b3540; --seg: #2a323c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 17px; margin: 0; flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.warn { background: var(--warn); }
+  main { max-width: 960px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .card.wide { grid-column: 1 / -1; }
+  .card h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 12px; }
+  button { font: inherit; color: var(--text); background: var(--btn); border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; min-height: 44px; cursor: pointer; }
+  button:hover:not(:disabled) { background: var(--btn-hover); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button.danger { color: var(--bad); }
+  button.next { background: var(--next); border-color: var(--next-line); font-weight: 600; }
+  input, select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 10px; min-height: 40px; width: 100%; }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+  label input { margin-top: 4px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row > * { flex: 1; }
+  .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+
+  .step-big { display: flex; align-items: baseline; gap: 10px; }
+  .step-big .num { font-size: 40px; font-weight: 700; line-height: 1; }
+  .step-big .name { font-size: 20px; font-weight: 600; }
+  .hint { color: var(--muted); margin: 6px 0 12px; min-height: 1.4em; }
+  .segs { display: flex; gap: 3px; margin-bottom: 14px; }
+  .segs span { flex: 1; height: 8px; border-radius: 3px; background: var(--seg); }
+  .segs span.done { background: var(--ok); }
+  .segs span.cur { background: var(--accent); }
+
+  .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .toggle:last-child { border-bottom: 0; }
+  .toggle small { color: var(--muted); }
+  .switch { position: relative; width: 48px; height: 28px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch i { position: absolute; inset: 0; background: var(--seg); border-radius: 14px; transition: .15s; cursor: pointer; }
+  .switch i::after { content: ""; position: absolute; left: 3px; top: 3px; width: 22px; height: 22px;
+    border-radius: 50%; background: #fff; transition: .15s; }
+  .switch input:checked + i { background: var(--ok); }
+  .switch input:checked + i::after { transform: translateX(20px); }
+  .switch input:disabled + i { opacity: .45; cursor: not-allowed; }
+
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0; }
+  dt { color: var(--muted); } dd { margin: 0; font-variant-numeric: tabular-nums; }
+  #log { margin: 0; max-height: 320px; overflow: auto; font: 12px/1.5 ui-monospace, Consolas, monospace;
+    white-space: pre-wrap; word-break: break-word; }
+  #log .out { color: var(--accent); }
+  #settings[hidden] { display: none; }
+  .err { color: var(--bad); font-size: 13px; min-height: 1.2em; }
+  .banner { grid-column: 1 / -1; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--bad);
+    color: var(--bad); background: var(--card); }
+  .banner[hidden] { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>✈ Lidmašīna</h1>
+  <span class="pill"><span class="dot" id="dotBroker"></span>brokeris</span>
+  <span class="pill"><span class="dot" id="dotDevice"></span>lidmašīna</span>
+  <button id="btnSettings" aria-label="Iestatījumi" style="min-height:36px;padding:6px 10px">⚙</button>
+</header>
+
+<main>
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="card wide" id="settings" hidden>
+    <h2>Savienojums ar brokeri</h2>
+    <label>EMQX izvietojuma adrese (Overview → Address)
+      <input id="cfgHost" placeholder="xxxxxxxx.ala.eu-central-1.emqxsl.com" autocomplete="off"></label>
+    <div class="row">
+      <label>WebSocket TLS ports <input id="cfgPort" type="number" value="8084"></label>
+      <label>Lietotājvārds <input id="cfgUser" autocomplete="username"></label>
+    </div>
+    <label>Parole <input id="cfgPass" type="password" autocomplete="current-password"></label>
+    <div class="row">
+      <button class="primary" id="btnConnect">Pieslēgties</button>
+      <button id="btnCloseSettings">Aizvērt</button>
+    </div>
+    <p class="err" id="cfgErr"></p>
+  </section>
+
+  <section class="card wide">
+    <h2>Scenārijs</h2>
+    <div class="step-big"><span class="num" id="stepNum">—</span><span class="name" id="stepName">nav datu</span></div>
+    <div class="hint" id="stepHint"></div>
+    <div class="segs" id="segs"></div>
+    <div class="row">
+      <select id="stepSelect"></select>
+      <button id="btnStep" data-ctl>Pāriet uz soli</button>
+      <button class="danger" id="btnReset" data-ctl>Atiestatīt kvestu</button>
+    </div>
+  </section>
+
+  <section class="card wide">
+    <h2>Notikumi <small style="text-transform:none;letter-spacing:0">— iezīmēts tas, ko gaidām tagad</small></h2>
+    <div class="grid" id="events"></div>
+  </section>
+
+  <section class="card">
+    <h2>Durvis</h2>
+    <div class="row">
+      <button data-ctl data-cmd="event door_lock">🔒 Aizvērt</button>
+      <button data-ctl data-cmd="event door_unlock" data-confirm="Atvērt durvis?">🔓 Atvērt</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Skaņa</h2>
+    <label>Skaļums: <b id="volVal">—</b>
+      <input type="range" id="vol" min="0" max="30" step="1" data-ctl></label>
+    <div class="row">
+      <input type="number" id="track" min="1" max="255" placeholder="Celiņa nr." style="max-width:110px">
+      <button data-ctl id="btnPlay">▶ Vienreiz</button>
+      <button data-ctl id="btnLoop">🔁 Atkārtoti</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button data-ctl data-cmd="stop">■ Apturēt</button>
+      <span class="pill" id="nowPlaying" style="flex:2">—</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Izejas (serviss)</h2>
+    <div id="outs"></div>
+  </section>
+
+  <section class="card">
+    <h2>Sistēma</h2>
+    <dl>
+      <dt>Programmaparatūra</dt><dd id="sysFw">—</dd>
+      <dt>Darbības laiks</dt><dd id="sysUp">—</dd>
+      <dt>Wi‑Fi</dt><dd id="sysRssi">—</dd>
+      <dt>Pacelšanās slēdži</dt><dd id="sysTakeoff">—</dd>
+      <dt>Autopilots</dt><dd id="sysAp">—</dd>
+      <dt>GBUS kopne (UNO)</dt><dd id="sysBus">—</dd>
+      <dt>Pēdējā atjaunināšana</dt><dd id="sysAge">—</dd>
+    </dl>
+    <div class="row" style="margin-top:12px"><button data-ctl data-cmd="ping">Pings</button></div>
+  </section>
+
+  <section class="card wide">
+    <h2>Žurnāls</h2>
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+"use strict";
+const P = "lidmashina/";            // префикс топиков — тот же, что TOPIC_PREFIX в прошивке
+const CFG_KEY = "lidmashina.cfg.v2";  // v2: старые сохранённые настройки (с неверным паролем) игнорируются
+
+// Шаги сценария (номера = step в прошивке)
+const STEPS = [
+  ["Gaida startu",        "Operators nospiež «Spēles sākums»"],
+  ["Pacelšanās slēdži",   "Gaidām: spēlētāji tur pacelšanās slēdžus"],
+  ["Sagatavošanās",       "Mirgo gaisma, skan ieraksts"],
+  ["Krēsli",              "Gaidām: spēlētāji apsēžas krēslos"],
+  ["Labirints",           "Gaidām: bumbiņa iziet cauri labirintam"],
+  ["Sprādziens",          "Sprādziens, kratīšana, trauksme"],
+  ["Lampas",              "Gaidām: spēlētāji ievieto lampas pultī"],
+  ["Radio 2",             "Gaidām: regulēšana ar rokturi, 2. pozīcija"],
+  ["Radio 3",             "Gaidām: regulēšana ar rokturi, 3. pozīcija"],
+  ["Radio 4",             "Gaidām: regulēšana ar rokturi, 4. pozīcija"],
+  ["Radio fināls",        "Gaidām: visas pozīcijas noregulētas"],
+  ["Melnā kaste",         "Gaidām: elpošana uz mitruma sensoru"],
+  ["Dzinēja pults",       "Gaidām: dzinēja poga"],
+  ["Nosēšanās",           "Spēlētāji nosēdina lidmašīnu ar autopilota pulti"],
+  ["Fināls",              "Kvests pabeigts"],
+];
+
+// События = то, что раньше приходило с шины/из Arduino IoT. steps — на каких шагах это событие ждут.
+const EVENTS = [
+  { id: "start",    t: "Spēles sākums",         steps: [0] },
+  { id: "switch",   t: "Pacelšanās slēdži",     steps: [1] },
+  { id: "kresls",   t: "Krēsli",                steps: [3] },
+  { id: "table",    t: "Galds: «+» un lampiņas", steps: [] },
+  { id: "labirint", t: "Labirints",             steps: [4] },
+  { id: "radio1",   t: "Lampas (radio 1)",      steps: [6] },
+  { id: "radio2",   t: "Radio 2",               steps: [7] },
+  { id: "radio3",   t: "Radio 3",               steps: [8] },
+  { id: "radio4",   t: "Radio 4",               steps: [9] },
+  { id: "radio5",   t: "Radio fināls",          steps: [10] },
+  { id: "blackbox", t: "Melnā kaste",           steps: [11] },
+  { id: "pult",     t: "Dzinēja pults",         steps: [12] },
+  { id: "landing",  t: "Nosēšanās (fināls)",    steps: [13], confirm: "Pabeigt kvestu (fināls)?" },
+  { id: "music",    t: "Mūzika",                steps: [] },
+];
+
+const OUTS = [
+  ["left", "Kratīšana pa kreisi", "GPIO32"], ["right", "Kratīšana pa labi", "GPIO26"], ["up", "Motors uz augšu", "GPIO27"],
+  ["red", "Sarkanā gaisma", "GPIO33"], ["white", "Baltā gaisma", "GPIO25"], ["cabin", "Gaisma kabīnē", "GPIO13"],
+  ["porthole", "Iluminators", "GPIO18"], ["door", "Durvis (slēdzene)", "GPIO4"], ["bomb", "Bumba", "GPIO19"],
+  ["drawer", "Atvilktne skapī", "GPIO21"], ["apbox", "Autopilota kaste", "GPIO22"],
+];
+
+const $ = (id) => document.getElementById(id);
+let client = null, deviceOnline = false, lastStateAt = 0, state = null, volDragging = false;
+
+// ---------- настройки ----------
+// Подключение вшито, чтобы пульт подключался сам, без ввода.
+// ВНИМАНИЕ: с паролем внутри этот файл = ключ от квеста. Не выкладывать в открытый доступ.
+// Если файл утёк — сменить пароль в EMQX (Access Control → Authentication) и в main/src/secrets.h.
+const DEFAULTS = {
+  host: "k9e0b146.ala.eu-central-1.emqxsl.com", port: 8084,
+  user: "lidmashina-esp32", pass: "y95XcsyNJm6cP2T",
+};
+function loadCfg() {
+  let c = {};
+  try { c = JSON.parse(localStorage.getItem(CFG_KEY)) || {}; } catch (e) { /* нет хранилища */ }
+  return Object.assign({}, DEFAULTS, c);
+}
+function saveCfg(c) {
+  try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch (e) { /* приватный режим — живём без сохранения */ }
+}
+function showSettings(show) {
+  $("settings").hidden = !show;
+  if (show) {
+    const c = loadCfg();
+    $("cfgHost").value = c.host || ""; $("cfgPort").value = c.port || 8084;
+    $("cfgUser").value = c.user || ""; $("cfgPass").value = c.pass || "";
+  }
+}
+
+// ---------- MQTT ----------
+function connect(c) {
+  if (client) { client.end(true); client = null; }
+  if (!c.host || !c.pass) { showSettings(true); $("cfgPass").focus(); return; }
+  setBroker("warn");
+  client = mqtt.connect(`wss://${c.host}:${c.port || 8084}/mqtt`, {
+    username: c.user, password: c.pass,
+    clientId: "web-" + Math.random().toString(16).slice(2, 10),
+    clean: true, reconnectPeriod: 3000, connectTimeout: 10000, protocolVersion: 4,
+  });
+  client.on("connect", () => {
+    setBroker("ok"); $("cfgErr").textContent = "";
+    client.subscribe([P + "state", P + "status", P + "log"], { qos: 0 });
+    addLog("Pieslēgts brokerim");
+  });
+  client.on("reconnect", () => setBroker("warn"));
+  client.on("close", () => setBroker("bad"));
+  client.on("offline", () => setBroker("bad"));
+  client.on("error", (e) => { setBroker("bad"); $("cfgErr").textContent = "Kļūda: " + e.message; });
+  client.on("message", (topic, payload) => {
+    const s = payload.toString();
+    if (topic === P + "status") { deviceOnline = s === "online"; refreshAvailability(); }
+    else if (topic === P + "state") { try { render(JSON.parse(s)); } catch (e) { addLog("nederīgs stāvoklis: " + e.message); } }
+    else if (topic === P + "log") addLog(s);
+  });
+}
+
+function send(cmd) {
+  if (!client || !client.connected) { addLog("nav savienojuma ar brokeri, komanda nav nosūtīta"); return; }
+  client.publish(P + "cmd", cmd, { qos: 1 });
+  addLog("→ " + cmd, true);
+}
+
+function setBroker(kind) {
+  $("dotBroker").className = "dot " + kind;
+  refreshAvailability();
+}
+
+function refreshAvailability() {
+  const fresh = Date.now() - lastStateAt < 75000;  // пульс от платы — раз в 30 с
+  const ok = client && client.connected && deviceOnline;
+  $("dotDevice").className = "dot " + (ok ? (fresh ? "ok" : "warn") : "bad");
+  document.querySelectorAll("[data-ctl]").forEach((b) => (b.disabled = !ok));
+  document.querySelectorAll("#outs input").forEach((b) => (b.disabled = !ok));
+  const banner = $("banner");
+  if (client && client.connected && !deviceOnline) {
+    banner.textContent = "Lidmašīna (ESP32) nav tīklā. Komandas nav pieejamas. Pārbaudiet barošanu un Wi‑Fi telpā.";
+    banner.hidden = false;
+  } else banner.hidden = true;
+}
+
+// ---------- отрисовка ----------
+function buildStatic() {
+  const segs = $("segs"), sel = $("stepSelect");
+  STEPS.forEach(([name], i) => {
+    segs.appendChild(document.createElement("span")).title = i + ". " + name;
+    const o = document.createElement("option"); o.value = i; o.textContent = i + ". " + name; sel.appendChild(o);
+  });
+  const ev = $("events");
+  EVENTS.forEach((e) => {
+    const b = document.createElement("button");
+    b.textContent = e.t; b.dataset.ctl = ""; b.dataset.ev = e.id;
+    b.onclick = () => { if (!e.confirm || confirm(e.confirm)) send("event " + e.id); };
+    ev.appendChild(b);
+  });
+  const outs = $("outs");
+  OUTS.forEach(([id, t, pin]) => {
+    const row = document.createElement("div"); row.className = "toggle";
+    row.innerHTML = `<span>${t} <small>${pin}</small></span>
+      <label class="switch"><input type="checkbox" data-out="${id}"><i></i></label>`;
+    row.querySelector("input").onchange = (ev) => send(`out ${id} ${ev.target.checked ? 1 : 0}`);
+    outs.appendChild(row);
+  });
+}
+
+function render(s) {
+  state = s; lastStateAt = Date.now();
+  const st = Number(s.step);
+  const def = STEPS[st] || ["?", ""];
+  $("stepNum").textContent = st; $("stepName").textContent = def[0]; $("stepHint").textContent = def[1];
+  [...$("segs").children].forEach((el, i) => (el.className = i < st ? "done" : i === st ? "cur" : ""));
+  document.querySelectorAll("#events button").forEach((b) => {
+    const e = EVENTS.find((x) => x.id === b.dataset.ev);
+    b.classList.toggle("next", e.steps.includes(st));
+  });
+  if (s.outs) document.querySelectorAll("#outs input").forEach((i) => (i.checked = !!s.outs[i.dataset.out]));
+  if (s.snd) {
+    if (!volDragging) $("vol").value = s.snd.vol;
+    $("volVal").textContent = s.snd.vol;
+    $("nowPlaying").textContent = s.snd.track ? `celiņš ${s.snd.track}${s.snd.loop ? " (atkārtoti)" : ""}` : "klusums";
+  }
+  $("sysFw").textContent = s.fw || "—";
+  $("sysUp").textContent = fmtUptime(s.up);
+  $("sysRssi").textContent = s.rssi ? s.rssi + " dBm" : "—";
+  $("sysTakeoff").textContent = s.in ? (s.in.takeoff ? "ieslēgti" : "izslēgti") : "—";
+  $("sysAp").textContent = s.ap && s.ap.online ? "tīklā" : "nav savienojuma";
+  $("sysBus").textContent = s.bus && s.bus.online ? "tīklā" + (s.bus.last ? `, pēdējais kods ${s.bus.last}` : "") : "nav savienojuma";
+  refreshAvailability();
+}
+
+function fmtUptime(sec) {
+  if (sec == null) return "—";
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), x = sec % 60;
+  return (h ? h + " st. " : "") + m + " min " + x + " s";
+}
+
+function addLog(text, outgoing) {
+  const log = $("log"), line = document.createElement("div");
+  const t = new Date().toLocaleTimeString("lv-LV");
+  line.textContent = `${t}  ${text}`;
+  if (outgoing) line.className = "out";
+  log.prepend(line);
+  while (log.childElementCount > 200) log.lastChild.remove();
+}
+
+// ---------- обработчики ----------
+$("btnSettings").onclick = () => showSettings($("settings").hidden);
+$("btnCloseSettings").onclick = () => showSettings(false);
+$("btnConnect").onclick = () => {
+  const c = { host: $("cfgHost").value.trim(), port: Number($("cfgPort").value) || 8084,
+              user: $("cfgUser").value.trim(), pass: $("cfgPass").value };
+  if (!c.host) { $("cfgErr").textContent = "Norādiet brokera adresi"; return; }
+  saveCfg(c); showSettings(false); connect(c);
+};
+$("btnStep").onclick = () => {
+  const n = $("stepSelect").value;
+  if (confirm(`Pāriet uz ${n}. soli «${STEPS[n][0]}»?`)) send("step " + n);
+};
+$("btnReset").onclick = () => { if (confirm("Atiestatīt kvestu uz sākumu? Visas izejas atgriezīsies sākuma stāvoklī.")) send("reset"); };
+$("vol").addEventListener("input", (e) => { volDragging = true; $("volVal").textContent = e.target.value; });
+$("vol").addEventListener("change", (e) => { volDragging = false; send("volume " + e.target.value); });
+$("btnPlay").onclick = () => { const n = parseInt($("track").value, 10); if (n > 0) send("play " + n); };
+$("btnLoop").onclick = () => { const n = parseInt($("track").value, 10); if (n > 0) send("loop " + n); };
+document.querySelectorAll("[data-cmd]").forEach((b) => {
+  b.onclick = () => { if (!b.dataset.confirm || confirm(b.dataset.confirm)) send(b.dataset.cmd); };
+});
+
+buildStatic();
+refreshAvailability();
+setInterval(() => {
+  if (lastStateAt) $("sysAge").textContent = "pirms " + Math.round((Date.now() - lastStateAt) / 1000) + " s";
+  refreshAvailability();
+}, 1000);
+connect(loadCfg());
+</script>
+</body>
+</html>
